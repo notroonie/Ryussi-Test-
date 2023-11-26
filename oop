@@ -1,0 +1,229 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Publication {
+public:
+    string Title;
+    float price;
+    int copies = 0;
+    string author;
+
+    void input() {
+        cout << "Title: ";
+        cin.ignore();
+        getline(cin, Title);
+        cout << "Price: ";
+        cin >> price;
+    }
+
+    string getTitle() {
+        return Title;
+    }
+
+    float getPrice() {
+        return price;
+    }
+
+    int getCopies() {
+        return copies;
+    }
+
+    void saleCopy() {
+        cout << "Total price: " << getCopies() * getPrice() << endl;
+    }
+
+    bool search(string key) {
+        if (key == Title) {
+            return true;
+        }
+        return false;
+    }
+};
+
+class Book_class : public Publication {
+public:
+    int orderCopy;
+
+    string getAuthor() {
+        return author;
+    }
+
+    void input() override {
+        Publication::input();
+        cout << "Author name: ";
+        cin.ignore();
+        getline(cin, author);
+    }
+
+    void orderCopies() {
+        cout << "Enter the number of copies: ";
+        cin >> orderCopy;
+        copies = copies + orderCopy;
+    }
+
+    void saleCopy(int n) override {
+        int x = getCopies();
+        if (x >= n) {
+            copies = x - n;
+            cout << "Total sale price: " << (n * getPrice()) << endl;
+        } else if (x == 0) {
+            cout << "Sorry, no copies available" << endl;
+        } else {
+            cout << "Only " << getCopies() << " are available" << endl;
+        }
+    }
+
+    void display() {
+        cout << "Title: " << getTitle() << endl;
+        cout << "Author: " << author << endl;
+        cout << "Price: " << getPrice() << endl;
+        cout << "Available copies: " << getCopies() << endl;
+    }
+};
+
+class Magazine : public Publication {
+public:
+    int orderQty;
+    string currIssue;
+
+    void input() override {
+        Publication::input();
+        cout << "Current Issue: ";
+        cin.ignore();
+        getline(cin, currIssue);
+    }
+
+    void recieveIssue() {
+        cout << "Enter copies: ";
+        cin >> orderQty;
+        copies = copies + orderQty;
+    }
+
+    void saleCopy(int n) override {
+        int x = getCopies();
+        if (x >= n) {
+            copies = x - n;
+            cout << "Total sale price: " << (n * getPrice()) << endl;
+        } else if (x == 0) {
+            cout << "Sorry, no copies available" << endl;
+        } else {
+            cout << "Only " << getCopies() << " are available" << endl;
+        }
+    }
+
+    void display() {
+        cout << "\nTitle: " << getTitle() << endl;
+        cout << "Current Issue: " << currIssue << endl;
+        cout << "Price: " << getPrice() << endl;
+        cout << "Available copies: " << getCopies() << endl;
+    }
+};
+
+int main() {
+    int ch, books_no, mag_no;
+    string key;
+    bool found;
+    
+    cout << "Enter the number of books: ";
+    cin >> books_no;
+
+    cout << "Enter the number of Magazines: ";
+    cin >> mag_no;
+
+    Book_class b[15];
+    Magazine m[15];
+
+    do {
+        cout << "\n\t\t===========MENU===========" << endl;
+        cout << "\t\t1. Order Books\n\t\t2. Order Magazines\n\t\t3. Sell Books\n\t\t4. Sell Magazine"
+             << "\n\t\t5. Display Books\n\t\t6. Display Magazines\n\t\t7. Exit" << endl;
+        cout << "\n\t\t==========================" << endl;
+        cout << "Enter your choice: ";
+        cin >> ch;
+
+        switch (ch) {
+            case 1:
+                for (int i = 0; i < books_no; i++) {
+                    cout << "---Enter details for book no " << (i + 1) << "---" << endl;
+                    b[i].input();
+                    b[i].orderCopies();
+                }
+                break;
+
+            case 2:
+                for (int i = 0; i < mag_no; i++) {
+                    cout << "---Enter details for magazine no " << (i + 1) << "---" << endl;
+                    m[i].input();
+                    m[i].recieveIssue();
+                }
+                break;
+
+            case 3:
+                cin.ignore();
+                cout << "Enter title of book to be sold: ";
+                getline(cin, key);
+                found = false;
+                for (int i = 0; i < books_no; i++) {
+                    found = b[i].search(key);
+                    if (found) {
+                        int n;
+                        cout << "Enter number of copies to be sold: ";
+                        cin >> n;
+                        b[i].saleCopy(n);
+                        break;
+                    }
+                }
+                break;
+
+            case 4:
+                cin.ignore();
+                cout << "Enter title of magazine to be sold: ";
+                getline(cin, key);
+                found = false;
+                for (int i = 0; i < mag_no; i++) {
+                    found = m[i].search(key);
+                    if (found) {
+                        int n;
+                        cout << "Enter number of copies: ";
+                        cin >> n;
+                        m[i].saleCopy(n);
+                        break;
+                    }
+                }
+                break;
+
+            case 5:
+                cout << "\n---Books Display--- " << endl;
+                for (int i = 0; i < books_no; i++) {
+                    cout << "\n-----Details of book " << (i + 1) << "-----" << endl;
+                    b[i].display();
+                    cout << "\n---------------------------\n";
+                }
+                break;
+
+            case 6:
+                cout << "\n-----Magazines Display----- " << endl;
+                for (int i = 0; i < mag_no; i++) {
+                    cout << "\n---Details of Magazine " << (i + 1) << "---" << endl;
+                    m[i].display();
+                    cout << "\n---------------------------\n";
+                }
+                break;
+
+            case 7:
+                int z;
+                cout << "----Press 0 to exit OR 1 to continue----" << endl;
+                cin >> z;
+                if (z == 1)
+                    break;
+                return 0;
+
+            default:
+                cout << "Wrong choice" << endl;
+        }
+    } while (true);
+
+    return 0;
+}
