@@ -1,0 +1,135 @@
+
+//server.cpp
+#include <iostream>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+using namespace std;
+
+int establishServerConnection(int port) {
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in address = {AF_INET, htons(port), INADDR_ANY};
+
+    bind(serverSocket, (struct sockaddr *)&address, sizeof(address));
+    cout << "\nServer is online. Waiting for a client..." << endl;
+
+    listen(serverSocket, 5);
+    int clientSocket = accept(serverSocket, NULL, NULL);
+    cout << "Connection established." << endl;
+
+    return clientSocket;
+}
+
+int powerModulo(int base, int exponent, int modulus) {
+    int result = 1;
+    for (int i = 0; i < exponent; i++) {
+        result = (result * base) % modulus;
+    }
+    return result;
+}
+
+// C = M^e mod n
+int encrypt(int message, int publicKey[2]) {
+    return powerModulo(message, publicKey[0], publicKey[1]);
+}
+
+int main() {
+    int port;
+    cout << "\nEnter port: ";
+    cin >> port;
+    int clientSocket = establishServerConnection(port);
+
+    int publicKey[2];
+    recv(clientSocket, &publicKey, sizeof(publicKey), 0);
+    cout << "\nPublic key received from the client: {" << publicKey[0] << ", " << publicKey[1] << "}" << endl;
+
+    int message;
+    cout << "\nEnter message (M < " << publicKey[1] << ") to encrypt: ";
+    cin >> message;
+
+    int ciphertext = encrypt(message, publicKey);
+    cout << "\nEncrypted Text: " << ciphertext << endl;
+    send(clientSocket, &ciphertext, sizeof(ciphertext), 0);
+    cout << "\nSent ciphertext to the client." << endl << endl;
+}
+
+// client.cpp
+#include <iostream>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+using namespace std;
+
+int connectToServer(const char *ip, int port) {
+    int socketFD = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in address = {AF_INET, htons(port), inet_addr(ip)};
+
+    if (connect(socketFD, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        cout << "\nRun the server program first." << endl;
+        exit(0);
+    } else {
+        cout << "\nClient connected to the server." << endl;
+    }
+    return socketFD;
+}
+
+int randomInRange(int low, int high) {
+    return rand() % (high - (low + 1)) + (low + 1);
+}
+
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+int powerModulo(int base, int exponent, int modulus) {
+    int result = 1;
+    for (int i = 0; i < exponent; i++) {
+        result = (result * base) % modulus;
+    }
+    return result;
+}
+
+// M = C^d mod n
+int decrypt(int ciphertext, int privateKey[2]) {
+    return powerModulo(ciphertext, privateKey[0], privateKey[1]);
+}
+
+int main() {
+    char ipAddress[50];
+    int port;
+    cout << "\nEnter the server's IP address: ";
+    cin >> ipAddress;
+    cout << "Enter port: ";
+    cin >> port;
+    int serverSocket = connectToServer(ipAddress, port);
+
+    int prime1, prime2;
+    cout << "\nEnter two prime numbers: ";
+    cin >> prime1 >> prime2;
+    int n = prime1 * prime2;
+    int phi = (prime1 - 1) * (prime2 - 1);
+
+    srand(time(NULL));
+    int exponent, privateKey;
+    do {
+        exponent = randomInRange(1, phi);
+    } while (gcd(exponent, phi) != 1);
+
+    for (privateKey = 1; privateKey < phi; privateKey++) {
+        if ((privateKey * exponent) % phi == 1)
+            break;
+    }
+
+    int publicKey[2] = {exponent, n};
+    int privateKeyArray[2] = {privateKey, n};
+    cout << "\nPublic key, PU = {" << exponent << ", " << n << "}" << endl;
+    cout << "Private key, PR = {" << privateKey << ", " << n << "}" << endl;
+
+    send(serverSocket, &publicKey, sizeof(publicKey), 0);
+    cout << "\nSent the public key to the server." << endl;
+
+    int ciphertext;
+    recv(serverSocket, &ciphertext, sizeof(ciphertext), 0);
+    cout << "\nCiphertext received from the server: " << ciphertext << endl;
+
+    int decryptedMessage = decrypt(ciphertext, privateKeyArray);
+    cout << "\nDecrypted Text: " << decryptedMessage << endl << endl;
+}
